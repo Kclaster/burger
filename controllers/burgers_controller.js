@@ -1,19 +1,32 @@
 let express = require('express');
 let burger = require('../models/burger');
+var router = express.Router();
 
-let app = express();
-
-app.get('/', function(req, res) {
+router.get('/', function(req, res) {
   burger.selectAll(function(data) {
-    console.log(data);
-    res.json(data);
+    var hbsObject = {
+      burgers: data
+    };
+    res.render('index', hbsObject);
   });
 });
 
-app.post('/burger', function(req, res) {
-  burger.InsertOne({ burger_name: req.body.name, devoured: false });
+router.post('/burger', function(req, res) {
+  post = burger.InsertOne(req.body, function(result) {
+    // Send back the ID of the new quote
+    res.json({ id: result.insertId });
+  });
 });
 
-app.put('/burger/:id', function(req, res) {
-  burger.UpdateOne(req.body.name, false);
+router.put('/burger/:id', function(req, res) {
+  burger.UpdateOne(req.params.id, function(results) {
+    if (results.changedRows == 0) {
+      // If no rows were changed, then the ID must not exist, so 404
+      return res.status(404).end();
+    } else {
+      res.status(200).end();
+    }
+  });
 });
+
+module.exports = router;
